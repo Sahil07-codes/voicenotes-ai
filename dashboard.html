@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceNotes AI Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --primary-blue: #3B82F6;
+            --primary-blue-hover: #2563EB;
+            --dark-bg: #111827;
+            --sidebar-bg: #1F2937;
+            --main-bg: #F3F4F6;
+            --widget-bg: #FFFFFF;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --text-light: #F9FAFB;
+            --border-color: #E5E7EB;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --rounded-lg: 0.75rem;
+            --rounded-full: 9999px;
+            --danger-red: #EF4444;
+        }
+
+        /* Basic Reset and Global Styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--main-bg);
+            color: var(--text-primary);
+            display: flex;
+        }
+
+        /* Main Dashboard Layout */
+        .dashboard-container { display: flex; width: 100%; min-height: 100vh; }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            transition: width 0.3s ease;
+        }
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+        .sidebar-header .logo-icon { font-size: 1.75rem; color: var(--primary-blue); }
+        .sidebar-header h1 { font-size: 1.25rem; font-weight: 600; }
+        .sidebar-nav { flex-grow: 1; }
+        .sidebar-nav ul { list-style: none; }
+        .sidebar-nav ul li a {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.875rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: var(--rounded-lg);
+            text-decoration: none;
+            color: #D1D5DB;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+            cursor: pointer;
+        }
+        .sidebar-nav ul li a:hover { background-color: #374151; color: var(--text-light); }
+        .sidebar-nav ul li a.active {
+            background-color: var(--primary-blue);
+            color: var(--text-light);
+            box-shadow: var(--shadow-md);
+        }
+        .sidebar-nav ul li a i { width: 20px; text-align: center; font-size: 1.125rem; }
+        .user-profile {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: var(--rounded-full);
+            background-color: var(--primary-blue);
+            font-weight: 600;
+            font-size: 1.25rem;
+            align-self: center;
+        }
+
+        /* Main Content Styling */
+        .main-content { flex-grow: 1; padding: 2rem; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .search-bar { position: relative; width: 100%; max-width: 400px; }
+        .search-bar i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); }
+        .search-bar input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border-radius: var(--rounded-lg);
+            border: 1px solid var(--border-color);
+            background-color: var(--widget-bg);
+            font-size: 1rem;
+        }
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .header-actions { display: flex; align-items: center; gap: 1rem; }
+        .btn-primary {
+            background-color: var(--primary-blue);
+            color: var(--text-light);
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--rounded-lg);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-primary:hover { background-color: var(--primary-blue-hover); }
+        .btn-primary:disabled { background-color: #9CA3AF; cursor: not-allowed; }
+
+        .widget-card {
+            background-color: var(--widget-bg);
+            padding: 1.5rem;
+            border-radius: var(--rounded-lg);
+            box-shadow: var(--shadow-md);
+        }
+        .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; }
+
+        /* Page Section Management */
+        .page-section {
+            display: none; /* Hide all pages by default */
+        }
+        .page-section.active {
+            display: block; /* Show only the active page */
+        }
+
+        /* Styles for New Placeholder Sections */
+        .file-drop-zone {
+            border: 3px dashed var(--border-color);
+            border-radius: var(--rounded-lg);
+            padding: 4rem 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+            transition: border-color 0.3s, background-color 0.3s;
+            cursor: pointer;
+        }
+        .file-drop-zone:hover, .file-drop-zone.dragover {
+            border-color: var(--primary-blue);
+            background-color: #f3f8ff;
+        }
+        .file-drop-zone i { font-size: 3rem; margin-bottom: 1rem; }
+        .file-drop-zone h3 { font-size: 1.25rem; color: var(--text-primary); }
+        .divider-text { text-align: center; margin: 1.5rem 0; color: var(--text-secondary); }
+
+        .notes-table { width: 100%; border-collapse: collapse; }
+        .notes-table th, .notes-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .notes-table th { font-weight: 600; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase;}
+        .notes-table td .note-title { font-weight: 500; color: var(--text-primary); }
+        .notes-table td .note-meta { font-size: 0.875rem; color: var(--text-secondary); }
+        .notes-table .actions a {
+            color: var(--primary-blue);
+            margin-right: 1rem;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .notes-table .actions a:hover { text-decoration: underline; }
+
+        .settings-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; align-items: start; }
+        .settings-nav ul { list-style: none; }
+        .settings-nav li a {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: var(--rounded-lg);
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .settings-nav li a.active, .settings-nav li a:hover {
+            background-color: #eef2ff;
+            color: var(--primary-blue);
+        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: var(--rounded-lg);
+            border: 1px solid var(--border-color);
+            font-size: 1rem;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 0;
+        }
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+        .faq-question { font-weight: 600; cursor: pointer; }
+        .faq-answer { margin-top: 1rem; color: var(--text-secondary); line-height: 1.6; }
+
+        /* Styles for Recorder Modal (Added without affecting other elements) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            background-color: var(--widget-bg);
+            padding: 2.5rem;
+            border-radius: var(--rounded-lg);
+            box-shadow: var(--shadow-md);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .modal-content h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .modal-content p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+        #record-timer {
+            font-size: 3rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+        }
+        #record-button {
+            width: 80px;
+            height: 80px;
+            border-radius: var(--rounded-full);
+            border: none;
+            background-color: var(--danger-red);
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 2rem auto;
+        }
+        #record-button:hover {
+             filter: brightness(1.1);
+        }
+        #record-button.recording .fa-microphone {
+            display: none;
+        }
+        #record-button:not(.recording) .fa-stop {
+            display: none;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--rounded-lg);
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 1024px) {
+            .sidebar { width: 80px; padding: 1.5rem 0.5rem; }
+            .sidebar-header h1, .sidebar-nav span { display: none; }
+            .sidebar-nav ul li a { justify-content: center; }
+            .user-profile { margin-left: auto; margin-right: auto; }
+        }
+        @media (max-width: 768px) {
+            .dashboard-container { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; flex-direction: row; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; }
+            .sidebar-nav { flex-grow: 0; }
+            .sidebar-nav ul { display: flex; gap: 0.5rem; }
+            .sidebar-nav ul li a { margin-bottom: 0; }
+            .user-profile { margin: 0; }
+            .main-content { padding: 1.5rem; }
+            .header { flex-direction: column; align-items: stretch; gap: 1rem; }
+            .search-bar { max-width: 100%; }
+            .settings-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div>
+                <div class="sidebar-header">
+                    <i class="fa-solid fa-wave-square logo-icon"></i>
+                    <h1>VoiceNotes AI</h1>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li><a data-page="dashboard-page" class="active"><i class="fa-solid fa-table-columns"></i><span>Dashboard</span></a></li>
+                        <li><a data-page="new-transcription-page"><i class="fa-solid fa-microphone-lines"></i><span>New Transcription</span></a></li>
+                        <li><a data-page="my-notes-page"><i class="fa-solid fa-note-sticky"></i><span>My Notes</span></a></li>
+                        <li><a data-page="shared-notes-page"><i class="fa-solid fa-share-nodes"></i><span>Shared Notes</span></a></li>
+                        <li><a data-page="templates-page"><i class="fa-solid fa-layer-group"></i><span>Templates</span></a></li>
+                        <li><a data-page="settings-page"><i class="fa-solid fa-gear"></i><span>Settings</span></a></li>
+                        <li><a data-page="help-page"><i class="fa-solid fa-circle-question"></i><span>Help & Support</span></a></li>
+                    </ul>
+                </nav>
+            </div>
+            <div class="user-profile">
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Search your notes...">
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary">
+                        <i class="fa-solid fa-plus"></i>
+                        New Note
+                    </button>
+                </div>
+            </header>
+
+            <section id="dashboard-page" class="page-section active">
+                <div class="widgets-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="widget-card" style="background-color: var(--dark-bg); color: var(--text-light); grid-column: span 2 / span 2;">
+                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">New Session</h2>
+                        <p style="color: #9CA3AF; margin-bottom: 1.5rem;">Record voice or upload an audio file.</p>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <button id="start-recording-btn" class="btn-primary"><i class="fa-solid fa-microphone"></i> Start Recording</button>
+                            <button id="upload-audio-btn" class="btn-primary" style="background-color: #374151;"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Audio</button>
+                        </div>
+                    </div>
+
+                    <div class="widget-card" id="activity-widget">
+                       <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem;">Your Activity</h2>
+                       <ul style="list-style: none; padding-left: 1rem;">
+                            <li style="margin-bottom: 0.75rem;"><b>Notes Created This Week:</b> <span style="font-weight: 500;">...</span></li>
+                            <li style="margin-bottom: 0.75rem;"><b>Total Transcription Time:</b> <span style="font-weight: 500;">...</span></li>
+                            <li style="margin-bottom: 0.75rem;"><b>Languages Used:</b> <span style="font-weight: 500;">...</span></li>
+                       </ul>
+                    </div>
+
+                    <div class="widget-card" id="storage-widget">
+                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Storage</h2>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <p style="font-size: 0.875rem;"><span>...</span> of 100 GB used</p>
+                        </div>
+                        <div class="progress-bar" style="width: 100%; height: 8px; background-color: var(--border-color); border-radius: var(--rounded-full); overflow: hidden; margin-bottom: 1.5rem;">
+                            <div class="progress" style="width: 0%; height: 100%; background-color: var(--primary-blue); border-radius: var(--rounded-full);"></div>
+                        </div>
+                        <button class="btn-primary" style="width: 100%;">Manage Storage</button>
+                    </div>
+                </div>
+
+                <section class="recent-notes">
+                    <h2 class="section-title">Recent Notes</h2>
+                    <div id="recent-notes-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    </div>
+                </section>
+            </section>
+
+            <section id="new-transcription-page" class="page-section">
+                <h2 class="section-title">New Transcription</h2>
+                <div class="widget-card">
+                    <div id="file-drop-zone" class="file-drop-zone">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <h3>Drag & drop your audio file here</h3>
+                        <p>or click to select a file</p>
+                        <small>Supported formats: MP3, WAV, M4A, FLAC</small>
+                    </div>
+                    <p class="divider-text">OR</p>
+                    <button id="live-recording-btn-alt" class="btn-primary" style="width: 100%; padding: 1rem; font-size: 1.125rem;">
+                        <i class="fa-solid fa-microphone"></i> Start Live Recording
+                    </button>
+                </div>
+            </section>
+
+            <section id="my-notes-page" class="page-section">
+                <h2 class="section-title">My Notes</h2>
+                <div class="widget-card">
+                    <table class="notes-table">
+                        <thead>
+                            <tr>
+                                <th>TITLE</th>
+                                <th>DATE</th>
+                                <th>DURATION</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="note-title">Meeting with Marketing Team</div>
+                                    <div class="note-meta">English</div>
+                                </td>
+                                <td>Sep 24, 2025</td>
+                                <td>25 mins</td>
+                                <td class="actions"><a href="#">Open</a><a href="#">Export</a></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="note-title">Lecture - Quantum Physics</div>
+                                    <div class="note-meta">English</div>
+                                </td>
+                                <td>Sep 23, 2025</td>
+                                <td>60 mins</td>
+                                <td class="actions"><a href="#">Open</a><a href="#">Export</a></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="note-title">Personal Diary Entry</div>
+                                    <div class="note-meta">Hindi</div>
+                                </td>
+                                <td>Sep 25, 2025</td>
+                                <td>10 mins</td>
+                                <td class="actions"><a href="#">Open</a><a href="#">Export</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="shared-notes-page" class="page-section">
+                <h2 class="section-title">Shared With Me</h2>
+                <div class="widget-card">
+                    <p>No notes have been shared with you yet.</p>
+                </div>
+            </section>
+
+            <section id="templates-page" class="page-section">
+                <h2 class="section-title">Templates</h2>
+                 <div class="widget-card">
+                    <p>Create templates to automatically structure your transcriptions. (e.g., Meeting Minutes, Interview, Lecture Notes)</p>
+                </div>
+            </section>
+
+            <section id="settings-page" class="page-section">
+                <h2 class="section-title">Settings</h2>
+                <div class="settings-grid">
+                    <aside class="settings-nav">
+                        <ul>
+                            <li><a href="#" class="active">My Profile</a></li>
+                            <li><a href="#">Password</a></li>
+                            <li><a href="#">Notifications</a></li>
+                            <li><a href="#">My Plan</a></li>
+                        </ul>
+                    </aside>
+                    <div class="widget-card">
+                        <h3>My Profile</h3>
+                        <form style="margin-top: 1.5rem;">
+                            <div class="form-group">
+                                <label for="name">Full Name</label>
+                                <input type="text" id="name" value="Sagar Sharma">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" value="user@example.com" disabled>
+                            </div>
+                            <button class="btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="help-page" class="page-section">
+                <h2 class="section-title">Help & Support</h2>
+                <div class="widget-card">
+                    <h3>Frequently Asked Questions</h3>
+                    <div class="faq-item">
+                        <p class="faq-question">How do I start a new transcription?</p>
+                        <p class="faq-answer">Navigate to the "New Transcription" page from the sidebar. You can either drag and drop an existing audio file or click the "Start Live Recording" button.</p>
+                    </div>
+                    <div class="faq-item">
+                        <p class="faq-question">What audio formats are supported?</p>
+                        <p class="faq-answer">We currently support MP3, WAV, M4A, and FLAC for file uploads.</p>
+                    </div>
+                     <div class="faq-item">
+                        <p class="faq-question">How do I manage my storage?</p>
+                        <p class="faq-answer">Your current storage usage is visible on the dashboard. You can manage and delete old notes from the "My Notes" section to free up space.</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="recorder-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Live Recording</h2>
+            <p id="recorder-status">Click the microphone to start recording</p>
+            <div id="record-timer">00:00</div>
+            <button id="record-button">
+                <i class="fa-solid fa-microphone"></i>
+                <i class="fa-solid fa-stop"></i>
+            </button>
+            <div class="modal-actions">
+                <button id="cancel-recording-btn" class="btn-secondary">Cancel</button>
+                <button id="save-recording-btn" class="btn-primary" disabled>Transcribe</button>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="audio-upload-input" accept="audio/*" hidden>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = sessionStorage.getItem('accessToken');
+            const API_BASE_URL = 'http://127.0.0.1:8000';
+
+            // --- 1. LOGIN GUARD ---
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // --- 2. SETUP PAGE NAVIGATION ---
+            const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+            const pageSections = document.querySelectorAll('.page-section');
+            
+            function showPage(pageId) {
+                pageSections.forEach(section => section.classList.remove('active'));
+                const targetPage = document.getElementById(pageId);
+                if (targetPage) targetPage.classList.add('active');
+            }
+
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    sidebarLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                    const pageId = link.getAttribute('data-page');
+                    showPage(pageId);
+                    if (pageId === 'dashboard-page') {
+                        fetchAndRenderDashboard();
+                    }
+                });
+            });
+
+            // --- 3. API DATA FETCHING AND RENDERING ---
+            async function fetchAndRenderDashboard() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/dashboard-data`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            sessionStorage.removeItem('accessToken');
+                            window.location.href = 'login.html';
+                        }
+                        throw new Error('Failed to fetch dashboard data');
+                    }
+                    
+                    const data = await response.json();
+                    renderDashboard(data);
+
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+            
+            function renderDashboard(data) {
+                const userProfile = document.querySelector('.user-profile');
+                if (data.user && data.user.name) {
+                    const initials = data.user.name.split(' ').map(n => n[0]).join('');
+                    userProfile.textContent = initials.toUpperCase();
+                }
+
+                const activityWidget = document.getElementById('activity-widget');
+                activityWidget.querySelector('li:nth-child(1) span').textContent = data.activity.notes_this_week;
+                activityWidget.querySelector('li:nth-child(2) span').textContent = `${data.activity.total_transcription_time} mins`;
+                activityWidget.querySelector('li:nth-child(3) span').textContent = data.activity.languages.join(', ') || 'None';
+
+                const storageWidget = document.getElementById('storage-widget');
+                storageWidget.querySelector('p span').textContent = `${data.storage.used_gb} GB`;
+                const percentage = (data.storage.used_gb / data.storage.total_gb) * 100;
+                storageWidget.querySelector('.progress').style.width = `${percentage}%`;
+
+                const notesGrid = document.getElementById('recent-notes-grid');
+                notesGrid.innerHTML = '';
+                if (data.recent_notes.length > 0) {
+                    data.recent_notes.forEach(note => {
+                        const noteCardHTML = `
+                            <article class="widget-card" style="background-color: var(--dark-bg); color: var(--text-light); display: flex; flex-direction: column;">
+                                <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">${note.title}</h3>
+                                <p style="font-size: 0.875rem; color: #9CA3AF; margin-bottom: 1rem;">${note.meta}</p>
+                                <p style="font-size: 1rem; color: #D1D5DB; flex-grow: 1; line-height: 1.5;">${note.desc}</p>
+                                <footer style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #374151; display: flex; gap: 1.5rem;">
+                                    <a href="#" style="text-decoration: none; color: #9CA3AF; font-weight: 500;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open</a>
+                                    <a href="#" style="text-decoration: none; color: #9CA3AF; font-weight: 500;"><i class="fa-solid fa-pen"></i> Edit</a>
+                                    <a href="#" style="text-decoration: none; color: #9CA3AF; font-weight: 500;"><i class="fa-solid fa-download"></i> Export</a>
+                                </footer>
+                            </article>
+                        `;
+                        notesGrid.insertAdjacentHTML('beforeend', noteCardHTML);
+                    });
+                } else {
+                    notesGrid.innerHTML = `<p style="color: var(--text-secondary);">You have no recent notes.</p>`;
+                }
+            }
+
+            // --- 4. NEW TRANSCRIPTION LOGIC ---
+            const recorderModal = document.getElementById('recorder-modal');
+            const startRecordingBtn = document.getElementById('start-recording-btn');
+            const altStartRecordingBtn = document.getElementById('live-recording-btn-alt');
+            const recordButton = document.getElementById('record-button');
+            const recordTimer = document.getElementById('record-timer');
+            const recorderStatus = document.getElementById('recorder-status');
+            const saveRecordingBtn = document.getElementById('save-recording-btn');
+            const cancelRecordingBtn = document.getElementById('cancel-recording-btn');
+            const uploadAudioBtn = document.getElementById('upload-audio-btn');
+            const audioUploadInput = document.getElementById('audio-upload-input');
+            const fileDropZone = document.getElementById('file-drop-zone');
+
+            let mediaRecorder;
+            let audioChunks = [];
+            let recordedBlob;
+            let timerInterval;
+
+            function openRecorderModal() {
+                resetRecorderState();
+                recorderModal.classList.add('active');
+            }
+
+            function closeRecorderModal() {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+                recorderModal.classList.remove('active');
+            }
+
+            function resetRecorderState() {
+                recordButton.classList.remove('recording');
+                saveRecordingBtn.disabled = true;
+                recorderStatus.textContent = 'Click the microphone to start recording';
+                recordTimer.textContent = '00:00';
+                audioChunks = [];
+                recordedBlob = null;
+                clearInterval(timerInterval);
+            }
+
+            async function startRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                    mediaRecorder.onstop = () => {
+                        recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        saveRecordingBtn.disabled = false;
+                        recorderStatus.textContent = 'Recording finished. Ready to transcribe.';
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+                    audioChunks = [];
+                    mediaRecorder.start();
+                    recordButton.classList.add('recording');
+                    recorderStatus.textContent = 'Recording in progress...';
+                    startTimer();
+                } catch (err) {
+                    alert("Could not access microphone. Please ensure permissions are granted.");
+                    closeRecorderModal();
+                }
+            }
+
+            function stopRecording() {
+                mediaRecorder.stop();
+                recordButton.classList.remove('recording');
+                clearInterval(timerInterval);
+            }
+
+            function startTimer() {
+                let seconds = 0;
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    const min = String(Math.floor(seconds / 60)).padStart(2, '0');
+                    const sec = String(seconds % 60).padStart(2, '0');
+                    recordTimer.textContent = `${min}:${sec}`;
+                }, 1000);
+            }
+            
+            async function uploadAndProcessAudio(audioBlob, filename) {
+                const formData = new FormData();
+                formData.append('file', audioBlob, filename);
+
+                const originalStatus = recorderStatus.textContent;
+                const modalWasActive = recorderModal.classList.contains('active');
+
+                if(modalWasActive) {
+                    recorderStatus.textContent = 'Uploading and processing... please wait.';
+                    saveRecordingBtn.disabled = true;
+                    cancelRecordingBtn.disabled = true;
+                } else {
+                    alert('Uploading and processing... please wait.');
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/transcribe`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.detail || 'Failed to process audio.');
+                    
+                    alert('Transcription successful! Your dashboard will now be updated.');
+                    if(modalWasActive) closeRecorderModal();
+                    fetchAndRenderDashboard();
+
+                } catch (error) {
+                    alert(`Error: ${error.message}`);
+                    if(modalWasActive) {
+                        recorderStatus.textContent = originalStatus;
+                        saveRecordingBtn.disabled = (recordedBlob == null);
+                        cancelRecordingBtn.disabled = false;
+                    }
+                }
+            }
+
+            startRecordingBtn.addEventListener('click', openRecorderModal);
+            altStartRecordingBtn.addEventListener('click', openRecorderModal);
+            cancelRecordingBtn.addEventListener('click', closeRecorderModal);
+            
+            recordButton.addEventListener('click', () => {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+            });
+
+            saveRecordingBtn.addEventListener('click', () => {
+                if (recordedBlob) {
+                    const filename = `recording-${new Date().toISOString()}.webm`;
+                    uploadAndProcessAudio(recordedBlob, filename);
+                }
+            });
+
+            uploadAudioBtn.addEventListener('click', () => audioUploadInput.click());
+            fileDropZone.addEventListener('click', () => audioUploadInput.click());
+            audioUploadInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    uploadAndProcessAudio(file, file.name);
+                    e.target.value = ''; // Reset input to allow uploading same file again
+                }
+            });
+
+            fileDropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileDropZone.classList.add('dragover');
+            });
+            fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
+            fileDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileDropZone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    uploadAndProcessAudio(file, file.name);
+                }
+            });
+
+            // --- 5. INITIAL LOAD ---
+            fetchAndRenderDashboard();
+        });
+    </script>
+</body>
+</html>
